@@ -1,14 +1,14 @@
 import 'dart:convert';
-import 'package:country_pickers/country.dart';
+import 'package:country_flags/country_flags.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:share/share.dart';
-import 'package:country_pickers/country_pickers.dart';
+import 'package:translator/translator.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key, required this.title});
+  const HomePage({super.key});
 
-  final String title;
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -16,14 +16,15 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   String quote = "";
   String author = "";
-  Locale currentLocale = Locale('en', 'US');
+  String titulo = "";
+  String botao = "";
   String translatedQuote = "";
+  String selectedCountry = 'PT';
 
   @override
   void initState() {
     super.initState();
     fetchQuote();
-    translate();
   }
 
   Future<void> fetchQuote() async {
@@ -35,26 +36,34 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         quote = data['content'];
         author = data['author'];
+
+        translateQuote();
       });
     } else {
-      print(
-          "Erro ao obter a citação. Código de status: ${response.statusCode}");
+      if (kDebugMode) {
+        print(
+            "Erro ao obter a citação. Código de status: ${response.statusCode}");
+      }
     }
   }
 
-  Future<void> translate() async {
-    // Código para traduzir a citação
-  }
-  void _changeLanguage(Locale newLocale) {
-    setState(() {
-      currentLocale = newLocale;
-    });
-  }
-
-  void _onCountryChanged(String? countryCode) {
-    // Implemente a lógica para tratar a mudança de país conforme necessário
-    if (countryCode != null) {
-      print('País selecionado: $countryCode');
+  //traduzir
+  Future<void> translateQuote() async {
+    final translator = GoogleTranslator();
+    if (selectedCountry == 'PT') {
+      Translation translation = await translator.translate(quote, to: 'pt');
+      setState(() {
+        quote = translation.text;
+        titulo = 'Citação do dia';
+        botao = 'NOVA CITAÇÃO';
+      });
+    } else {
+      Translation translation = await translator.translate(quote, to: 'en');
+      setState(() {
+        quote = translation.text;
+        titulo = 'Quote of the day';
+        botao = 'NEW QUOTE';
+      });
     }
   }
 
@@ -63,17 +72,37 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.black,
-        title: Text(
-          widget.title,
-          style: const TextStyle(color: Colors.white),
+        title: const Text(
+          'Babel Talk',
+          style: TextStyle(color: Colors.white),
         ),
         centerTitle: true,
         actions: [
-          //Adicionar Icon de Linguas Aqui!
-
+          DropdownButton<String>(
+            value: selectedCountry,
+            onChanged: (String? value) {
+              setState(() {
+                selectedCountry = value!;
+                translateQuote();
+              });
+            },
+            items: [
+              'PT',
+              'US',
+            ].map((String countryCode) {
+              return DropdownMenuItem<String>(
+                value: countryCode,
+                child: CountryFlag.fromCountryCode(
+                  countryCode,
+                  height: 20,
+                  width: 30,
+                ),
+              );
+            }).toList(),
+          ),
           IconButton(
               onPressed: () {
-                Share.share('textoParaCompartilhar');
+                Share.share('$quote \n $author \n \n #babeltalk');
               },
               icon: const Icon(Icons.share)),
         ],
@@ -87,9 +116,9 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
-                  "Quote of the day",
-                  style: TextStyle(
+                Text(
+                  titulo,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
                     fontSize: 18,
@@ -125,7 +154,7 @@ class _HomePageState extends State<HomePage> {
                       side: const BorderSide(color: Colors.red), // Cor da borda
                     ),
                   ),
-                  child: const Text("NEW QUOTE"),
+                  child: Text(botao),
                 ),
               ],
             ),
