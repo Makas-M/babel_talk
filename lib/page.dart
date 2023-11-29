@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:country_flags/country_flags.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -20,10 +21,10 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   String quote = "";
   String author = "";
-  String titulo = "";
-  String botao = "";
-  String translatedQuote = "";
+  String titulo = "Citação do dia";
+  String botao = "NOVA CITAÇÃO";
   String selectedCountry = 'PT';
+  bool isFavorite = false;
 
   @override
   void initState() {
@@ -35,21 +36,33 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> fetchQuote() async {
-    final response =
-        await http.get(Uri.parse("https://api.quotable.io/random"));
+    try {
+      final response =
+          await http.get(Uri.parse("https://api.quotable.io/random"));
 
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-      setState(() {
-        quote = data['content'];
-        author = data['author'];
-
-        translateQuote();
-      });
-    } else {
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        setState(() {
+          quote = data['content'];
+          author = data['author'];
+          translateQuote();
+        });
+      } else {
+        if (kDebugMode) {
+          print(
+              "Erro ao obter a citação. Código de status: ${response.statusCode}");
+        }
+      }
+    } on SocketException catch (e) {
+      // Tratar exceção específica de SocketException
       if (kDebugMode) {
-        print(
-            "Erro ao obter a citação. Código de status: ${response.statusCode}");
+        print('Erro de conexão: ${e.message}');
+      }
+      // Implementar ações de recuperação, se necessário
+    } catch (e) {
+      // Capturar outras exceções não tratadas
+      if (kDebugMode) {
+        print('Erro inesperado: $e');
       }
     }
   }
@@ -135,53 +148,69 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                SizedBox(
-                  height: 100,
-                  child: Text(
-                    quote.isNotEmpty ? quote : "...",
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500),
-                  ),
+                Text(
+                  quote.isNotEmpty ? quote : "...",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500),
                 ),
+                const SizedBox(height: 10),
                 Text(
                   author.isNotEmpty ? author : "",
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: Colors.white),
                 ),
                 const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: fetchQuote,
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.red, //texto
-                    backgroundColor: Colors.black, //cor do texto
-                    elevation: 5,
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(20), // Borda arredondada
-                      side: const BorderSide(color: Colors.red), // Cor da borda
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      onPressed: () async {
+                        final database =
+                            await DatabaseHelper.initializeDatabase();
+                        await DatabaseHelper.insertData(database, quote);
+                        setState(() {
+                          isFavorite = !isFavorite;
+                        });
+                      },
+                      icon: Icon(
+                        isFavorite ? Icons.favorite : Icons.favorite,
+                        size: 50.0,
+                        color: isFavorite
+                            ? Colors.red
+                            : Color.fromARGB(255, 58, 58, 58),
+                      ),
                     ),
-                  ),
-                  child: Text(botao),
+                    const SizedBox(width: 20),
+                    ElevatedButton(
+                      onPressed: fetchQuote,
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.red, //texto
+                        backgroundColor: Colors.black, //cor do texto
+                        elevation: 5,
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(20), // Borda arredondada
+                          side: const BorderSide(
+                              color: Colors.red), // Cor da borda
+                        ),
+                      ),
+                      child: Text(botao),
+                    ),
+                  ],
                 ),
-                ElevatedButton(
-                  onPressed: () async {
-                    final database = await DatabaseHelper.initializeDatabase();
-                    await DatabaseHelper.insertData(database, quote);
-                  },
-                  child: const Text('Salvar'),
-                ),
-                ElevatedButton(
+                /*ElevatedButton(
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => DataListPage()),
+                      MaterialPageRoute(
+                          builder: (context) => const DataListPage()),
                     );
                   },
                   child: const Text('Ver Dados'),
-                ),
+                ),*/
               ],
             ),
           ),

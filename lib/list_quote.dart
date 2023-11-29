@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:babel_talk/database_helper.dart';
 
 class DataListPage extends StatefulWidget {
+  const DataListPage({super.key});
+
   @override
+  // ignore: library_private_types_in_public_api
   _DataListPageState createState() => _DataListPageState();
 }
 
@@ -28,7 +31,7 @@ class _DataListPageState extends State<DataListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Citaçoes Armazenadas'),
+        title: const Text('Citaçoes Armazenadas'),
       ),
       body: ListView.builder(
         itemCount: _data.length,
