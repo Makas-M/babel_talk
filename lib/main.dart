@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:babel_talk/page.dart';
 
-void main() {
+import 'package:babel_talk/page.dart';
+import 'package:babel_talk/database_helper.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await DatabaseHelper.initializeDatabase();
   runApp(const MyApp());
 }
 

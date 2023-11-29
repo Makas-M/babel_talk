@@ -6,6 +6,10 @@ import 'package:http/http.dart' as http;
 import 'package:share/share.dart';
 import 'package:translator/translator.dart';
 
+//importar paginas
+import 'package:babel_talk/database_helper.dart';
+import 'package:babel_talk/list_quote.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -25,6 +29,9 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     fetchQuote();
+
+    WidgetsFlutterBinding.ensureInitialized();
+    DatabaseHelper.initializeDatabase();
   }
 
   Future<void> fetchQuote() async {
@@ -86,6 +93,9 @@ class _HomePageState extends State<HomePage> {
                 translateQuote();
               });
             },
+            underline: Container(
+              height: 0,
+            ),
             items: [
               'PT',
               'US',
@@ -155,6 +165,22 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                   child: Text(botao),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final database = await DatabaseHelper.initializeDatabase();
+                    await DatabaseHelper.insertData(database, quote);
+                  },
+                  child: const Text('Salvar'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => DataListPage()),
+                    );
+                  },
+                  child: const Text('Ver Dados'),
                 ),
               ],
             ),
