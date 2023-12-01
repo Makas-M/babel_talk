@@ -7,9 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:share/share.dart';
 import 'package:translator/translator.dart';
 
-//importar paginas
-import 'package:babel_talk/database_helper.dart';
-import 'package:babel_talk/list_quote.dart';
+import 'package:babel_talk/snackbar.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -24,15 +22,12 @@ class _HomePageState extends State<HomePage> {
   String titulo = "Citação do dia";
   String botao = "NOVA CITAÇÃO";
   String selectedCountry = 'PT';
-  bool isFavorite = false;
+  String processando = 'Processando...';
 
   @override
   void initState() {
     super.initState();
     fetchQuote();
-
-    WidgetsFlutterBinding.ensureInitialized();
-    DatabaseHelper.initializeDatabase();
   }
 
   Future<void> fetchQuote() async {
@@ -57,6 +52,7 @@ class _HomePageState extends State<HomePage> {
       // Tratar exceção específica de SocketException
       if (kDebugMode) {
         print('Erro de conexão: ${e.message}');
+        showSnackbar(context);
       }
       // Implementar ações de recuperação, se necessário
     } catch (e) {
@@ -76,6 +72,7 @@ class _HomePageState extends State<HomePage> {
         quote = translation.text;
         titulo = 'Citação do dia';
         botao = 'NOVA CITAÇÃO';
+        processando = 'Processando...';
       });
     } else {
       Translation translation = await translator.translate(quote, to: 'en');
@@ -83,6 +80,7 @@ class _HomePageState extends State<HomePage> {
         quote = translation.text;
         titulo = 'Quote of the day';
         botao = 'NEW QUOTE';
+        processando = 'Processing...';
       });
     }
   }
@@ -131,8 +129,7 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: Container(
-        //TODO: Colocar opcao de mudar a cor de darkmode para light
-        color: const Color.fromARGB(255, 27, 27, 27),
+        color: const Color.fromARGB(255, 34, 34, 34),
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -149,7 +146,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  quote.isNotEmpty ? quote : "...",
+                  quote.isNotEmpty ? quote : processando,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                       color: Colors.white,
@@ -163,54 +160,21 @@ class _HomePageState extends State<HomePage> {
                   style: const TextStyle(color: Colors.white),
                 ),
                 const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      onPressed: () async {
-                        final database =
-                            await DatabaseHelper.initializeDatabase();
-                        await DatabaseHelper.insertData(database, quote);
-                        setState(() {
-                          isFavorite = !isFavorite;
-                        });
-                      },
-                      icon: Icon(
-                        isFavorite ? Icons.favorite : Icons.favorite,
-                        size: 50.0,
-                        color: isFavorite
-                            ? Colors.red
-                            : Color.fromARGB(255, 58, 58, 58),
-                      ),
+                ElevatedButton(
+                  onPressed: fetchQuote,
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.red, //texto
+                    backgroundColor: Colors.black, //cor do texto
+                    elevation: 5,
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(20), // Borda arredondada
+                      side: const BorderSide(color: Colors.red), // Cor da borda
                     ),
-                    const SizedBox(width: 20),
-                    ElevatedButton(
-                      onPressed: fetchQuote,
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.red, //texto
-                        backgroundColor: Colors.black, //cor do texto
-                        elevation: 5,
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(20), // Borda arredondada
-                          side: const BorderSide(
-                              color: Colors.red), // Cor da borda
-                        ),
-                      ),
-                      child: Text(botao),
-                    ),
-                  ],
+                  ),
+                  child: Text(botao),
                 ),
-                /*ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const DataListPage()),
-                    );
-                  },
-                  child: const Text('Ver Dados'),
-                ),*/
+                SizedBox(height: 10),
               ],
             ),
           ),
